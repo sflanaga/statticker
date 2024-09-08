@@ -2,7 +2,7 @@ package statticker
 
 import "fmt"
 
-func formatBytes(bytes uint64) string {
+func FormatBytes[T int64 | uint64](bytes T) string {
 	const (
 		KB = 1024
 		MB = KB * 1024
@@ -24,7 +24,7 @@ func formatBytes(bytes uint64) string {
 	}
 }
 
-func addCommas[T int | uint | int32 | uint32 | int64 | uint64](i T) string {
+func AddCommas[T int | uint | int32 | uint32 | int64 | uint64](i T) string {
 	src := fmt.Sprint(i)
 	n := len(src)
 	if n == 0 {
