@@ -16,10 +16,10 @@ func TestTicker(t *testing.T) {
 	// 	return int64(memStats.HeapAlloc)
 	// }
 
-	var count = Stat("count").statType(Count)
-	var bytes = Stat("bytes").statType(Bytes)
+	var count = Stat("count").StatType(Count)
+	var bytes = Stat("bytes").StatType(Bytes)
 	sl = append(sl, count)
-	sl = append(sl, Stat("goroutines").statType(Gauge).setExternal(func() int64 { return int64(runtime.NumGoroutine()) }))
+	sl = append(sl, Stat("goroutines").StatType(Gauge).SetExternal(func() int64 { return int64(runtime.NumGoroutine()) }))
 	// sl = append(sl, Stat("memalloc").statType(Gauge).setExternal(getHeapMem))
 	sl = append(sl, bytes)
 

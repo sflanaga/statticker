@@ -35,12 +35,12 @@ func Stat(name string) *TStat {
 	return &TStat{0, 0, 0, name, Count, nil}
 }
 
-func (stat *TStat) statType(stattype StatType) *TStat {
+func (stat *TStat) StatType(stattype StatType) *TStat {
 	stat.stattype = stattype
 	return stat
 }
 
-func (stat *TStat) setExternal(external func() int64) *TStat {
+func (stat *TStat) SetExternal(external func() int64) *TStat {
 	stat.external = external
 	return stat
 }
