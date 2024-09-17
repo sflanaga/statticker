@@ -34,7 +34,7 @@ func TestTicker(t *testing.T) {
 	sl = append(sl, NewStatFunc("goroutines", Gauge, func() int64 { return int64(runtime.NumGoroutine()) }))
 	// sl = append(sl, Stat("memalloc").statType(Gauge).setExternal(getHeapMem))
 	sl = append(sl, bytes)
-	sl = append(sl, NewStat("goroutines", Print).WithPrint(func() { println("hi there") }))
+	sl = append(sl, NewStat("print", Print).WithPrint(func() { fmt.Printf("\ttime: %v - and thing else might go here...\n", time.Now()) }))
 
 	var wg sync.WaitGroup
 	for i := 0; i < 4; i++ {
