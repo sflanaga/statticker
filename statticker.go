@@ -2,6 +2,7 @@ package statticker
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -20,6 +21,7 @@ const (
 	Count StatType = iota + 1
 	Bytes
 	Gauge // used for current value ONLY
+	Print // completely custom output
 )
 
 type Stat struct {
@@ -29,14 +31,15 @@ type Stat struct {
 	Name       string
 	Stattype   StatType
 	external   func() int64
+	print      func()
 }
 
 func NewStat(name string, stattype StatType) *Stat {
-	return &Stat{0, 0, 0, name, stattype, nil}
+	return &Stat{0, 0, 0, name, stattype, nil, nil}
 }
 
 func NewStatFunc(name string, stattype StatType, external func() int64) *Stat {
-	return &Stat{0, 0, 0, name, stattype, external}
+	return &Stat{0, 0, 0, name, stattype, external, nil}
 }
 
 func (stat *Stat) WithStatType(stattype StatType) *Stat {
@@ -46,6 +49,14 @@ func (stat *Stat) WithStatType(stattype StatType) *Stat {
 
 func (stat *Stat) WithExternal(external func() int64) *Stat {
 	stat.external = external
+	return stat
+}
+
+func (stat *Stat) WithPrint(print func()) *Stat {
+	if stat.Stattype != Print {
+		log.Fatalf("created a non-Print type Stat with a Print closure")
+	}
+	stat.print = print
 	return stat
 }
 
@@ -62,6 +73,7 @@ type sample struct {
 	Value int64
 	Delta int64
 	Stype StatType
+	Print func()
 }
 
 type Ticker struct {
@@ -127,7 +139,11 @@ func defaultPrinter(t *Ticker, samplePeriod time.Duration, finalOutput bool) {
 		}
 	}
 	fmt.Fprintln(os.Stderr, string(t.Buf))
-
+	for _, sample := range t.Samples {
+		if sample.Stype == Print {
+			sample.Print()
+		}
+	}
 }
 
 func (t *Ticker) takeSamples(finalOutput bool) {
@@ -147,17 +163,21 @@ func (t *Ticker) takeSamples(finalOutput bool) {
 	for i, stat := range t.StatList {
 		samples[i].Name = &stat.Name
 		samples[i].Stype = stat.Stattype
-		if stat.external != nil {
-			samples[i].Value = stat.external()
+		if stat.print == nil {
+			if stat.external != nil {
+				samples[i].Value = stat.external()
+			} else {
+				samples[i].Value = atomic.LoadInt64(&stat.value)
+			}
+			if !finalOutput {
+				samples[i].Delta = t.Samples[i].Value - stat.lastValue
+			} else {
+				samples[i].Delta = t.Samples[i].Value - stat.firstValue
+			}
+			stat.lastValue = samples[i].Value
 		} else {
-			samples[i].Value = atomic.LoadInt64(&stat.value)
+			samples[i].Print = stat.print
 		}
-		if !finalOutput {
-			samples[i].Delta = t.Samples[i].Value - stat.lastValue
-		} else {
-			samples[i].Delta = t.Samples[i].Value - stat.firstValue
-		}
-		stat.lastValue = samples[i].Value
 	}
 	// sampleEnd := time.Now()
 
